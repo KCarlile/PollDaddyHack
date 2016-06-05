@@ -1,4 +1,4 @@
-import requests, re, json, time
+import requests, re, json, time, random
 requests.packages.urllib3.disable_warnings()
 
 # Created by Alex Beals
@@ -20,7 +20,7 @@ def vote_once(form, value):
 	send = c.get(request, headers=redirect, verify=False)
 	return ('revoted' in send.url)
 
-def vote(form, value, times):
+def vote(form, value, times, wait_min = None, wait_max = None):
 	global redirect
 	redirect = {"Referer": base_url + str(form) + "/", "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8", "User-Agent": "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.99 Safari/537.36", "Upgrade-Insecure-Requests":"1", "Accept-Encoding": "gzip, deflate, sdch", "Accept-Language": "en-US,en;q=0.8"}
 	# For each voting attempt
@@ -28,8 +28,16 @@ def vote(form, value, times):
 		b = vote_once(form, value)
 		# If successful, print that out, else try waiting for 60 seconds (rate limiting)
 		if not b:
-			print "Voted (time number " + str(i) + ")!"
-			time.sleep(3)
+			print "Voted (time number " + str(i) + " of " + str(times) + " times)!"
+
+			if wait_min and wait_max:
+				seconds = random.randint(wait_min, wait_max)
+			else:
+				seconds = 3
+
+			print "Sleeping " + str(seconds) + " seconds before next vote."
+
+			time.sleep(seconds)
 		else:
 			print "Locked.  Sleeping for 60 seconds."
 			i-=1
@@ -40,4 +48,14 @@ poll_id = 0
 answer_id = 0
 number_of_votes = 0
 
-vote(poll_id, answer_id, number_of_votes)
+# To simulate organic voting, set a min and max random wait time (in seconds)
+# and voting will occur at intervals within the range. Not providing a value
+# will default to 3 seconds.
+wait_min = None
+wait_max = None
+
+# For an even more organic voting experience and to avoid banning by IP, enable
+# TOR and setup a proxy for all voting calls to go through the TOR network
+# resulting in varying source IP addresses.
+
+vote(poll_id, answer_id, number_of_votes, wait_min, wait_max)
